@@ -19,7 +19,10 @@
  * Difficulty: 1
  */
 int bitAnd(int x, int y) {
-    return 2;
+    int notX = ~x;
+    int notY = ~y;
+    int temp = notX | notY;
+    return ~temp;
 }
 
 /*
@@ -30,7 +33,14 @@ int bitAnd(int x, int y) {
  *   Difficulty: 1
  */
 int bitXor(int x, int y) {
-    return 2;
+    int both1 = x & y;
+    int notX = ~x;
+    int notY = ~y;
+    int both0 = notX & notY;
+
+    int a = ~both1;
+    int b = ~both0;
+    return a & b;
 }
 
 /*
@@ -50,8 +60,18 @@ int bitXor(int x, int y) {
  *   1 if x and y have the same sign , 0 otherwise.
  */
 int samesign(int x, int y) {
-    return 2;
+    if (!x) {
+        return !y;
+    }
+    if (!y) {
+        return 0;
+    }
+
+    int diff = x ^ y;
+    int sign = diff >> 31;
+    return !sign;
 }
+
 
 /*
  * logtwo - Calculate the base-2 logarithm of a positive integer using bit
@@ -63,8 +83,31 @@ int samesign(int x, int y) {
  *   Difficulty: 4
  */
 int logtwo(int v) {
-    return 2;
+    int move16 = v > 65535;
+    move16 = move16 << 4;
+    v = v >> move16;
+
+    int move8 = v > 255;
+    move8 = move8 << 3;
+    v = v >> move8;
+
+    int move4 = v > 15;
+    move4 = move4 << 2;
+    v = v >> move4;
+
+    int move2 = v > 3;
+    move2 = move2 << 1;
+    v = v >> move2;
+
+    int move1 = v > 1;
+
+    int ans = move16 | move8;
+    ans = ans | move4;
+    ans = ans | move2;
+    ans = ans | move1;
+    return ans;
 }
+
 
 /*
  *  byteSwap - swaps the nth byte and the mth byte
@@ -76,8 +119,23 @@ int logtwo(int v) {
  *    Difficulty: 2
  */
 int byteSwap(int x, int n, int m) {
-    return 2;
+    int shiftN = n << 3;
+    int shiftM = m << 3;
+
+    int partN = x >> shiftN;
+    int partM = x >> shiftM;
+    int diff = partN ^ partM;
+    diff = diff & 255;
+
+    // + 0u 和左移必须放在一起，让左移使用 unsigned 运算
+    int changeN = (diff + 0u) << shiftN;
+    int changeM = (diff + 0u) << shiftM;
+
+    int ans = x ^ changeN;
+    ans = ans ^ changeM;
+    return ans;
 }
+
 
 /*
  * reverse - Reverse the bit order of a 32-bit unsigned integer.
@@ -88,7 +146,18 @@ int byteSwap(int x, int n, int m) {
  *   Difficulty: 3
  */
 unsigned reverse(unsigned v) {
-    return 2;
+    unsigned ans = 0;
+    int count = 32;
+
+    while (count) {
+        unsigned bit = v & 1;
+        ans = ans << 1;
+        ans = ans | bit;
+        v = v >> 1;
+        count = count - 1;
+    }
+
+    return ans;
 }
 
 /*
@@ -100,7 +169,18 @@ unsigned reverse(unsigned v) {
  *   Difficulty: 3
  */
 int logicalShift(int x, int n) {
-    return 2;
+    int zero = !n;
+    int step = n + ~0;
+    step = step + zero;
+
+    int keep = ~zero;
+    keep = keep + 1;
+    int mask = 0x7fffffff >> step;
+    mask = mask | keep;
+
+    int ans = x >> n;
+    ans = ans & mask;
+    return ans;
 }
 
 /*
@@ -112,7 +192,49 @@ int logicalShift(int x, int n) {
  *   Difficulty: 4
  */
 int leftBitCount(int x) {
-    return 2;
+    int part = x >> 16;
+    part = ~part;
+    int all16 = !part;
+    int count = all16 << 4;
+
+    int step = ~count;
+    step = 24 + step;
+    step = step + 1;
+    part = x >> step;
+    part = ~part;
+    int all8 = !part;
+    int add = all8 << 3;
+    count = count + add;
+
+    step = ~count;
+    step = 28 + step;
+    step = step + 1;
+    part = x >> step;
+    part = ~part;
+    int all4 = !part;
+    add = all4 << 2;
+    count = count + add;
+
+    step = ~count;
+    step = 30 + step;
+    step = step + 1;
+    part = x >> step;
+    part = ~part;
+    int all2 = !part;
+    add = all2 << 1;
+    count = count + add;
+
+    step = ~count;
+    step = 31 + step;
+    step = step + 1;
+    part = x >> step;
+    part = ~part;
+    int all1 = !part;
+    count = count + all1;
+
+    part = ~x;
+    int all32 = !part;
+    return count + all32;
 }
 
 /*
@@ -124,7 +246,41 @@ int leftBitCount(int x) {
  *   Difficulty: 4
  */
 unsigned float_i2f(int x) {
-    return 2;
+    if (!x) {
+        return 0;
+    }
+
+    unsigned sign = x & 0x80000000;
+    unsigned num = x;
+    if (sign) {
+        num = ~num;
+        num = num + 1;
+    }
+
+    int power = 31;
+    while (!(num & 0x80000000)) {
+        num = num << 1;
+        power = power - 1;
+    }
+
+    unsigned tail = num & 0x7fffffff;
+    tail = tail >> 8;
+    unsigned rest = num & 255;
+
+    int more = rest > 128;
+    int half = rest == 128;
+    int odd = tail & 1;
+    int round = half & odd;
+    round = more | round;
+    if (round) {
+        tail = tail + 1;
+    }
+
+    unsigned exp = power + 127;
+    exp = exp << 23;
+    unsigned ans = exp + tail;
+    ans = sign | ans;
+    return ans;
 }
 
 /*
@@ -139,7 +295,29 @@ unsigned float_i2f(int x) {
  *   Difficulty: 4
  */
 unsigned floatScale2(unsigned uf) {
-    return 2;
+    unsigned exp = uf >> 23;
+    exp = exp & 255;
+    unsigned sign = uf & 0x80000000;
+    unsigned tail = uf & 0x7fffff;
+
+    if (exp == 255) {
+        return uf;
+    }
+
+    if (exp == 0) {
+        tail = tail << 1;
+        return sign | tail;
+    }
+
+    exp = exp + 1;
+    if (exp == 255) {
+        tail = 0;
+    }
+
+    exp = exp << 23;
+    unsigned ans = sign | exp;
+    ans = ans | tail;
+    return ans;
 }
 
 /*
@@ -156,7 +334,37 @@ unsigned floatScale2(unsigned uf) {
  *   Difficulty: 3
  */
 int float64_f2i(unsigned uf1, unsigned uf2) {
-    return 2;
+    int sign = uf2 >> 31;
+    int exp = uf2 >> 20;
+    exp = exp & 2047;
+    int power = exp - 1023;
+
+    if (power < 0) {
+        return 0;
+    }
+    if (power >= 31) {
+        return ~0x7fffffff;
+    }
+
+    int high = uf2 & 0xfffff;
+    high = high | 0x100000;
+    int ans;
+
+    if (power <= 20) {
+        int step = 20 - power;
+        ans = high >> step;
+    } else {
+        int step = power - 20;
+        high = high << step;
+        step = 52 - power;
+        int low = uf1 >> step;
+        ans = high | low;
+    }
+
+    if (sign) {
+        return -ans;
+    }
+    return ans;
 }
 
 /*
@@ -173,5 +381,19 @@ int float64_f2i(unsigned uf1, unsigned uf2) {
  *   Difficulty: 4
  */
 unsigned floatPower2(int x) {
-    return 2;
+    if (x < -149) {
+        return 0;
+    }
+
+    if (x < -126) {
+        int step = x + 149;
+        return 1 << step;
+    }
+
+    if (x > 127) {
+        return 0x7f800000;
+    }
+
+    int exp = x + 127;
+    return exp << 23;
 }
